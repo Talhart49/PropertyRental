@@ -19,6 +19,10 @@ PORT=5000
 CLIENT_URL=https://your-vercel-app.vercel.app
 MONGODB_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_long_random_secret
+
+# Gmail SMTP (for nodemailer)
+EMAIL=your_gmail_address@gmail.com
+APP_PASSWORD=your_gmail_app_password
 ```
 
 Build/start:

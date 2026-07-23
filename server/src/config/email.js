@@ -53,14 +53,19 @@ export async function sendVerificationEmail({ to, verificationUrl }) {
     </div>
   `;
 
-  const info = await getTransporter().sendMail({
-    from,
-    to,
-    subject: "Verify your Property Rental email address",
-    html
-  });
+  try {
+    const info = await getTransporter().sendMail({
+      from,
+      to,
+      subject: "Verify your Property Rental email address",
+      html
+    });
 
-  console.log(`  ✉️  Verification email sent to ${to} (messageId: ${info.messageId})`);
+    console.log(`  ✉️  Verification email sent to ${to} (messageId: ${info.messageId})`);
+  } catch (error) {
+    console.error(`  ❌  Failed to send verification email to ${to}:`, error.message);
+    throw error;
+  }
 }
 
 export async function sendPasswordResetEmail({ to, resetUrl }) {
@@ -98,12 +103,17 @@ export async function sendPasswordResetEmail({ to, resetUrl }) {
     </div>
   `;
 
-  const info = await getTransporter().sendMail({
-    from,
-    to,
-    subject: "Reset your Property Rental password",
-    html
-  });
+  try {
+    const info = await getTransporter().sendMail({
+      from,
+      to,
+      subject: "Reset your Property Rental password",
+      html
+    });
 
-  console.log(`  ✉️  Password reset email sent to ${to} (messageId: ${info.messageId})`);
+    console.log(`  ✉️  Password reset email sent to ${to} (messageId: ${info.messageId})`);
+  } catch (error) {
+    console.error(`  ❌  Failed to send password reset email to ${to}:`, error.message);
+    throw error;
+  }
 }

@@ -61,15 +61,21 @@ router.post("/register", requireJwtSecret, authLimiter, async (req, res, next) =
 
     try {
       await sendVerificationEmail({ to: user.email, verificationUrl });
-    } catch (_emailError) {
-      console.warn("  ⚠️  Failed to send verification email — registration completed without email.");
+    } catch (emailError) {
+      console.warn(`  ⚠️  Failed to send verification email — auto-verifying user as fallback.`, emailError.message);
+      user.isVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save();
     }
 
     return res.status(201).json({
       data: {
         user: user.toSafeObject()
       },
-      message: "Account created successfully. Please check your email to verify your account before logging in."
+      message: user.isVerified
+        ? "Account created successfully. (Email verification unavailable — you can log in directly.)"
+        : "Account created successfully. Please check your email to verify your account before logging in."
     });
   } catch (error) {
     next(error);
@@ -130,7 +136,8 @@ router.post("/resend-verification", requireAuth, authLimiter, async (req, res, n
 
     try {
       await sendVerificationEmail({ to: req.user.email, verificationUrl });
-    } catch (_emailError) {
+    } catch (emailError) {
+      console.error(`  ❌  Resend verification email failed:`, emailError.message);
       return res.status(500).json({ error: "Failed to send verification email. Please try again later." });
     }
 
