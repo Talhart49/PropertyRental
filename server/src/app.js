@@ -24,6 +24,10 @@ dotenv.config({
 });
 
 const app = express();
+
+// Trust the first proxy in front of the app (e.g. Railway, Nginx, Render)
+app.set("trust proxy", 1);
+
 const clientUrl = process.env.CLIENT_URL || "http://localhost:3000";
 const uploadsPath = path.resolve(__dirname, "../uploads");
 
