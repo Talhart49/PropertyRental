@@ -12,7 +12,8 @@ function getTransporter() {
     auth: {
       user: process.env.EMAIL,
       pass: process.env.APP_PASSWORD
-    }
+    },
+    family: 4 // Force IPv4 — Railway does not support outbound IPv6
   });
 
   return transporter;
