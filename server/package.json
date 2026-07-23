@@ -1,0 +1,32 @@
+{
+  "name": "server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "seed:demo": "node src/scripts/seedDemoData.js",
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --no-cache"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.6.0",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.7.3",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.4.1",
+    "jest": "^30.4.2",
+    "mongodb-memory-server": "^11.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.2.2"
+  }
+}

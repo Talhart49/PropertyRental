@@ -1,0 +1,1024 @@
+{
+  "info": {
+    "name": "Property Rental Portal",
+    "description": "Complete Postman collection for the Property Rental Portal API. Includes test scripts for automated validation.\n\n## Setup\n1. Import this collection into Postman\n2. Create an environment with:\n   - `baseUrl`: `http://localhost:5000`\n   - `token`: (leave empty, populated by Auth tests)\n   - `propertyId`: (leave empty, populated by Create Property)\n   - `bookingId`: (leave empty, populated by Create Booking)\n   - `conversationId`: (leave empty, populated by Create Conversation)\n3. Run the collection in order (Auth → Properties → Bookings → Messages → Admin)\n\n## Pre-requisites\n- Backend server running on `http://localhost:5000`\n- MongoDB connection configured",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "propertyId",
+      "value": ""
+    },
+    {
+      "key": "bookingId",
+      "value": ""
+    },
+    {
+      "key": "conversationId",
+      "value": ""
+    },
+    {
+      "key": "landlordToken",
+      "value": ""
+    },
+    {
+      "key": "tenantToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+              "pm.test('Response has status ok', () => {",
+              "  const jsonData = pm.response.json();",
+              "  pm.expect(jsonData.data.status).to.eql('ok');",
+              "  pm.expect(jsonData.data.service).to.eql('property-rental-api');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Landlord",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Response has token and user data', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.token).to.not.be.empty;",
+                  "  pm.expect(jsonData.data.user.role).to.eql('landlord');",
+                  "  pm.expect(jsonData.data.user.password).to.be.undefined;",
+                  "});",
+                  "pm.collectionVariables.set('landlordToken', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Landlord\",\n  \"email\": \"pm.landlord@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"landlord\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Register Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Response has token and user data', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.token).to.not.be.empty;",
+                  "  pm.expect(jsonData.data.user.role).to.eql('tenant');",
+                  "});",
+                  "pm.collectionVariables.set('tenantToken', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Tenant\",\n  \"email\": \"pm.tenant@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"tenant\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Response has admin role', () => {",
+                  "  pm.expect(pm.response.json().data.user.role).to.eql('admin');",
+                  "});",
+                  "pm.collectionVariables.set('adminToken', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Admin\",\n  \"email\": \"pm.admin@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login as Landlord",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Login returns token', () => {",
+                  "  pm.expect(pm.response.json().data.token).to.not.be.empty;",
+                  "});",
+                  "pm.collectionVariables.set('landlordToken', pm.response.json().data.token);",
+                  "pm.collectionVariables.set('token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pm.landlord@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login as Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('tenantToken', pm.response.json().data.token);",
+                  "pm.collectionVariables.set('token', pm.response.json().data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pm.tenant@example.com\",\n  \"password\": \"Password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns user data without password', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.user.email).to.not.be.empty;",
+                  "  pm.expect(jsonData.data.user.password).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Admin Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 for admin', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Admin role confirmed', () => {",
+                  "  pm.expect(pm.response.json().data.role).to.eql('admin');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/auth/admin-check"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns success message', () => {",
+                  "  pm.expect(pm.response.json().message).to.include('reset link');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pm.landlord@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/forgot-password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "item": [
+        {
+          "name": "Create Property",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Property created with correct title', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.property.title).to.eql('Modern 2-Bed Apartment');",
+                  "  pm.expect(jsonData.data.property.landlord).to.not.be.empty;",
+                  "});",
+                  "pm.collectionVariables.set('propertyId', pm.response.json().data.property._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Modern 2-Bed Apartment", "type": "text" },
+                { "key": "description", "value": "A beautiful modern apartment in the city centre with stunning views and all amenities.", "type": "text" },
+                { "key": "addressLine1", "value": "42 Market Street", "type": "text" },
+                { "key": "city", "value": "Manchester", "type": "text" },
+                { "key": "postcode", "value": "M1 1HQ", "type": "text" },
+                { "key": "pricePerMonth", "value": "1100", "type": "text" },
+                { "key": "bedrooms", "value": "2", "type": "text" },
+                { "key": "propertyType", "value": "flat", "type": "text" }
+              ]
+            },
+            "url": "{{baseUrl}}/api/properties"
+          }
+        },
+        {
+          "name": "Get My Properties",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns at least 1 property', () => {",
+                  "  pm.expect(pm.response.json().data.properties.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/properties/mine"
+          }
+        },
+        {
+          "name": "Search Properties",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Search returns results with pagination', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.properties).to.be.an('array');",
+                  "  pm.expect(jsonData.data.pagination).to.have.property('total');",
+                  "  pm.expect(jsonData.data.pagination).to.have.property('pages');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/properties?location=Manchester&minPrice=500&maxPrice=2000"
+          }
+        },
+        {
+          "name": "Get Property By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns property with landlord populated', () => {",
+                  "  const property = pm.response.json().data.property;",
+                  "  pm.expect(property._id).to.eql(pm.collectionVariables.get('propertyId'));",
+                  "  pm.expect(property.landlord).to.have.property('name');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/properties/{{propertyId}}"
+          }
+        },
+        {
+          "name": "Update Property",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Price updated successfully', () => {",
+                  "  pm.expect(pm.response.json().data.property.pricePerMonth).to.eql(1200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "pricePerMonth", "value": "1200", "type": "text" }
+              ]
+            },
+            "url": "{{baseUrl}}/api/properties/{{propertyId}}"
+          }
+        },
+        {
+          "name": "Delete Property",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Property ID returned', () => {",
+                  "  pm.expect(pm.response.json().data.id).to.eql(pm.collectionVariables.get('propertyId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/properties/{{propertyId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Booking created as pending', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.booking.status).to.eql('pending');",
+                  "  pm.expect(jsonData.data.booking.tenant).to.not.be.empty;",
+                  "});",
+                  "pm.collectionVariables.set('bookingId', pm.response.json().data.booking._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"{{propertyId}}\",\n  \"requestedDate\": \"2026-07-15T10:00:00.000Z\",\n  \"message\": \"I would like to view this property.\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings"
+          }
+        },
+        {
+          "name": "Get My Bookings (Tenant)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns bookings array', () => {",
+                  "  pm.expect(pm.response.json().data.bookings).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/bookings/mine"
+          }
+        },
+        {
+          "name": "Get Incoming Bookings (Landlord)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns incoming bookings', () => {",
+                  "  pm.expect(pm.response.json().data.bookings).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/bookings/incoming"
+          }
+        },
+        {
+          "name": "Approve Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Booking approved', () => {",
+                  "  pm.expect(pm.response.json().data.booking.status).to.eql('approved');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"landlordResponse\": \"Looking forward to showing you around!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/bookings/{{bookingId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Create/Get Conversation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Conversation created', () => {",
+                  "  pm.expect(pm.response.json().data.conversation._id).to.not.be.empty;",
+                  "});",
+                  "pm.collectionVariables.set('conversationId', pm.response.json().data.conversation._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"propertyId\": \"{{propertyId}}\",\n  \"bookingId\": \"{{bookingId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/messages/conversations"
+          }
+        },
+        {
+          "name": "List Conversations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns conversations array', () => {",
+                  "  pm.expect(pm.response.json().data.conversations).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/messages/conversations"
+          }
+        },
+        {
+          "name": "Send Message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => { pm.response.to.have.status(201); });",
+                  "pm.test('Message sent', () => {",
+                  "  pm.expect(pm.response.json().data.message.body).to.eql('Hello, is this property available?');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"Hello, is this property available?\"\n}"
+            },
+            "url": "{{baseUrl}}/api/messages/conversations/{{conversationId}}/messages"
+          }
+        },
+        {
+          "name": "Get Messages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns conversation with messages', () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.data.conversation._id).to.eql(pm.collectionVariables.get('conversationId'));",
+                  "  pm.expect(jsonData.data.messages).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/messages/conversations/{{conversationId}}/messages"
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Messages marked as read', () => {",
+                  "  pm.expect(pm.response.json().data.markedRead).to.be.at.least(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/messages/conversations/{{conversationId}}/read"
+          }
+        },
+        {
+          "name": "Get Unread Counts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns unread counts object', () => {",
+                  "  pm.expect(pm.response.json().data.unreadCounts).to.be.an('object');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/messages/conversations/unread-counts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns summary with all sections', () => {",
+                  "  const summary = pm.response.json().data.summary;",
+                  "  pm.expect(summary).to.have.property('users');",
+                  "  pm.expect(summary).to.have.property('properties');",
+                  "  pm.expect(summary).to.have.property('bookings');",
+                  "  pm.expect(summary).to.have.property('conversations');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/summary"
+          }
+        },
+        {
+          "name": "Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns users list', () => {",
+                  "  pm.expect(pm.response.json().data.users).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/users"
+          }
+        },
+        {
+          "name": "Get All Properties",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns all properties', () => {",
+                  "  pm.expect(pm.response.json().data.properties).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/properties"
+          }
+        },
+        {
+          "name": "Get All Bookings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Returns all bookings', () => {",
+                  "  pm.expect(pm.response.json().data.bookings).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/bookings"
+          }
+        },
+        {
+          "name": "Update Property Moderation Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Moderation status updated', () => {",
+                  "  pm.expect(pm.response.json().data.property.moderationStatus).to.eql('active');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moderationStatus\": \"active\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/properties/{{propertyId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "item": [
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Profile updated', () => {",
+                  "  pm.expect(pm.response.json().data.user.name).to.eql('Updated Name');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\"\n}"
+            },
+            "url": "{{baseUrl}}/api/users/me"
+          }
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => { pm.response.to.have.status(200); });",
+                  "pm.test('Password changed message', () => {",
+                  "  pm.expect(pm.response.json().message).to.include('Password changed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{landlordToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Password123\",\n  \"newPassword\": \"NewPass12345\"\n}"
+            },
+            "url": "{{baseUrl}}/api/users/me/password"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "401 - No Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401', () => { pm.response.to.have.status(401); });",
+                  "pm.test('Authentication error message', () => {",
+                  "  pm.expect(pm.response.json().error).to.include('Authentication token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "403 - Tenant Cannot Access Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', () => { pm.response.to.have.status(403); });",
+                  "pm.test('Permission denied message', () => {",
+                  "  pm.expect(pm.response.json().error).to.include('permission');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{tenantToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/summary"
+          }
+        },
+        {
+          "name": "404 - Non-existent Route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404', () => { pm.response.to.have.status(404); });",
+                  "pm.test('Route not found', () => {",
+                  "  pm.expect(pm.response.json().error).to.eql('Route not found.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/nonexistent-route"
+          }
+        },
+        {
+          "name": "400 - Invalid ObjectId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400', () => { pm.response.to.have.status(400); });",
+                  "pm.test('Invalid identifier message', () => {",
+                  "  pm.expect(pm.response.json().error).to.eql('Invalid identifier.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/properties/invalid-id-format"
+          }
+        },
+        {
+          "name": "409 - Duplicate Email Registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 409', () => { pm.response.to.have.status(409); });",
+                  "pm.test('Duplicate email error', () => {",
+                  "  pm.expect(pm.response.json().error).to.include('already exists');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate\",\n  \"email\": \"pm.landlord@example.com\",\n  \"password\": \"Password123\",\n  \"role\": \"tenant\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        }
+      ]
+    }
+  ]
+}
